@@ -1,142 +1,52 @@
 package com.jmdns.multicast.device;
 
 import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import android.content.Context;
 import android.util.Log;
 
-/*
- * File：TcpSocket.java
- *
- * Copyright (C) 2015 JmdnsService Project
- * Date：2015年6月1日 下午3:45:51
- * All Rights SXHL(New Space) Corporation Reserved.
- * http://www.at-et.cn
- *
- */
-
-/**
- * @description:
- * 
- * @author: HuJun
- * @date: 2015年6月1日 下午3:45:51
- */
-
-public class TcpSocket {
-
-	private Context context = null;
-
-	public Thread serverThread = null;
-
-	private serverSocket serSocket = null;
-
-	public String Tag = "TcpSocket";
-
-	public TcpSocket(Context context) {
-		this.context = context;
-
-	}
+public class TcpSocket implements Runnable {
+	private String Tag = "TcpSocket";
+	private Thread tcpThread = null;
 
 	public void startSocket() {
-		if (serverThread == null || !serverThread.isAlive()) {
-			serSocket = new serverSocket();
-			serverThread = new Thread(serSocket);
-			serverThread.start();
+		if (tcpThread == null || !tcpThread.isAlive()) {
+			tcpThread = new Thread(TcpSocket.this);
+			tcpThread.start();
 		}
 	}
 
-	public class serverSocket implements Runnable {
-
-		private ServerSocket mSockets = null;
-
-		private Socket socket = null;
-
-		private static final int SERVERPORT = 60034;// 服务端的端口号是
-
-		private boolean isRunning = false;
-
-		private BufferedReader bufferedReader = null;
-		private String msg = "";
-
-		public serverSocket() {
-			isRunning = true;
-			initSocket();
-		}
-
-		/**
-		 * @description:
-		 * 
-		 * @throws:
-		 * @author: HuJun
-		 * @date: 2015年6月1日 下午4:05:43
-		 */
-		private void initSocket() {
-			try {
-				Log.e(Tag, "初始化Socket");
-				mSockets = new ServerSocket(SERVERPORT);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		public void stop() {
-			isRunning = false;
-		}
-
-		@Override
-		public void run() {
-			// TODO Auto-generated method stub
-			while (isRunning) {
-				Log.e(Tag, "接收信息:");
+	public void run() {
+		try {
+			// 创建ServerSocket
+			ServerSocket serverSocket = new ServerSocket(8060);
+			while (true) {
+				// 接受客户端请求
+				Log.e(Tag, "获取客户端");
+				Socket client = serverSocket.accept();
 				try {
-					socket = mSockets.accept();
-					bufferedReader = new BufferedReader(new InputStreamReader(
-							socket.getInputStream()));
-					while ((msg = bufferedReader.readLine()) != null) {
-						Log.e(Tag, "接收到信息为:");
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					// 接收客户端消息
+					BufferedReader in = new BufferedReader(
+							new InputStreamReader(client.getInputStream()));
+					String str = in.readLine();
+					Log.e(Tag, "read:" + str);
+					in.close();
+				} catch (Exception e) {
+					Log.e(Tag, e.getMessage());
 					e.printStackTrace();
-					close();
+				} finally {
+					// 关闭
+					client.close();
+					Log.e(Tag, "close");
 				}
-
 			}
-		}
-
-		public void close() {
-			isRunning = false;
-			if (bufferedReader != null) {
-				try {
-					bufferedReader.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				bufferedReader = null;
-			}
-
-			if (socket != null) {
-				try {
-					socket.close();
-					socket = null;
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			}
-		}
-	}
-
-	public void close() {
-		if (serSocket != null) {
-			serSocket.close();
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 

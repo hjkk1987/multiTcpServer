@@ -1,94 +1,99 @@
 package com.jmdns.service.activity;
 
-import com.atet.jmdns.app.JmdnsAPP;
-import com.atet.jmdns.connect.Communication;
-import com.atet.jmdns.connect.ConnectionWrapper;
-import com.jmdns.multicast.device.TcpSocket;
-import com.jmdns.multicast.device.UDPSocket;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+import android.app.Activity;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
 
-@SuppressLint("HandlerLeak")
 public class MainActivity extends Activity {
 
-	private Button btnRegist = null;
-	private String Tag = MainActivity.class.getName();
-	private TextView tvMsg = null;
-	private TcpSocket tcpSocket = null;
-
-	// private UDPSocket udpSocket = null;
+	public String Tag = "MainActivity";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
 		setContentView(R.layout.activity_main);
-		((JmdnsAPP) getApplication()).setHandler(mHandler);
-		btnRegist = (Button) findViewById(R.id.btn_register);
-		tvMsg = (TextView) findViewById(R.id.tvMsg);
-		// JmdnsAPP.multiSocket.startSocket();
-		// udpSocket = new UDPSocket(MainActivity.this);
-		// udpSocket.startSocket();
-		tcpSocket = new TcpSocket(MainActivity.this);
-		tcpSocket.startSocket();
-		btnRegist.setOnClickListener(new OnClickListener() {
 
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-
-			}
-		});
+		try {
+			new Thread(new networkRecieve()).start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
-	Handler mHandler = new Handler() {
-		public void handleMessage(Message msg) {
-			super.handleMessage(msg);
-			Bundle bundle = msg.getData();
-			String strMsg = bundle.getString(Communication.MESSAGE);
-			tvMsg.setText("receiver:" + strMsg);
-			Log.e(Tag, "receiver:" + strMsg);
-		};
+	private static final String SERVERIP = "127.0.0.1";
+	private static final int SERVERPORT = 60034;
+
+	class networkRecieve implements Runnable {
+
+		ServerSocket messageserver = null;
+		Socket messagesocket = null;
+
+		@Override
+		public void run() {
+			try {
+				messageserver = new ServerSocket(SERVERPORT);
+				Log.e(Tag, "text:开始接收数据");
+				while (true) {
+					messagesocket = messageserver.accept();
+					BufferedReader br = new BufferedReader(
+							new InputStreamReader(
+									messagesocket.getInputStream()));
+					String text = "";
+					while ((text = br.readLine()) != null) {
+						// show.setText(text);
+						Log.e(Tag, "text:" + text);
+					}
+
+					messageserver.close();
+					br.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	};
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+
 		return true;
 	}
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			return true;
+	class networkSend implements Runnable {
+
+		Socket messagesendsocket;
+		OutputStream ops;
+
+		@Override
+		public void run() {
+			try {
+				messagesendsocket = new Socket(InetAddress.getLocalHost(),
+						SERVERPORT);
+				ops = messagesendsocket.getOutputStream();
+				String datatosend = new String();
+
+				byte[] buf = datatosend.getBytes();
+				ops.write(buf);
+				ops.flush();
+				messagesendsocket.close();
+				ops.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
-		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
-	public void onBackPressed() {
-		// TODO Auto-generated method stub
-		super.onBackPressed();
-		// udpSocket.stop();
-
-		tcpSocket.close();
-		JmdnsAPP.mJmdns.exit();
-		finish();
-		android.os.Process.killProcess(android.os.Process.myPid());
-	}
+	};
 }
