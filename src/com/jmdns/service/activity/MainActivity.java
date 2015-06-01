@@ -3,6 +3,8 @@ package com.jmdns.service.activity;
 import com.atet.jmdns.app.JmdnsAPP;
 import com.atet.jmdns.connect.Communication;
 import com.atet.jmdns.connect.ConnectionWrapper;
+import com.jmdns.multicast.device.TcpSocket;
+import com.jmdns.multicast.device.UDPSocket;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -23,6 +25,9 @@ public class MainActivity extends Activity {
 	private Button btnRegist = null;
 	private String Tag = MainActivity.class.getName();
 	private TextView tvMsg = null;
+	private TcpSocket tcpSocket = null;
+
+	// private UDPSocket udpSocket = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +36,11 @@ public class MainActivity extends Activity {
 		((JmdnsAPP) getApplication()).setHandler(mHandler);
 		btnRegist = (Button) findViewById(R.id.btn_register);
 		tvMsg = (TextView) findViewById(R.id.tvMsg);
-		JmdnsAPP.multiSocket.startSocket();
+		// JmdnsAPP.multiSocket.startSocket();
+		// udpSocket = new UDPSocket(MainActivity.this);
+		// udpSocket.startSocket();
+		tcpSocket = new TcpSocket(MainActivity.this);
+		tcpSocket.startSocket();
 		btnRegist.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -75,6 +84,9 @@ public class MainActivity extends Activity {
 	public void onBackPressed() {
 		// TODO Auto-generated method stub
 		super.onBackPressed();
+		// udpSocket.stop();
+
+		tcpSocket.close();
 		JmdnsAPP.mJmdns.exit();
 		finish();
 		android.os.Process.killProcess(android.os.Process.myPid());
