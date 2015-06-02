@@ -23,6 +23,7 @@ import android.widget.EditText;
 public class MainActivity extends Activity {
 
 	public String Tag = "MainActivity";
+	private TcpSocket tcpSocket = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +31,7 @@ public class MainActivity extends Activity {
 
 		setContentView(R.layout.activity_main);
 
-		TcpSocket tcpSocket = new TcpSocket(MainActivity.this);
+		tcpSocket = new TcpSocket(MainActivity.this);
 		new Thread(tcpSocket).start();
 	}
 
@@ -75,6 +76,16 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 
 		return true;
+	}
+
+	@Override
+	public void onBackPressed() {
+		// TODO Auto-generated method stub
+		super.onBackPressed();
+		tcpSocket.stopTcp();
+		finish();
+		android.os.Process.killProcess(android.os.Process.myPid());
+
 	}
 
 	class networkSend implements Runnable {

@@ -87,6 +87,17 @@ public class TcpSocket implements Runnable {
 
 	public void stopTcp() {
 		isRunning = false;
+		if (serverSocket != null) {
+			try {
+				serverSocket.close();
+				serverSocket = null;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+		mExecutorService.shutdownNow();
 	}
 
 	/**
@@ -118,9 +129,7 @@ public class TcpSocket implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
-
 	}
 
 }
