@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		TcpSocket tcpSocket = new TcpSocket(MainActivity.this);
-		tcpSocket.startSocket();
+		new Thread(tcpSocket).start();
 	}
 
 	private static final int SERVERPORT = 60034;

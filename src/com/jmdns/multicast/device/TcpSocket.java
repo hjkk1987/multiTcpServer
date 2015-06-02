@@ -4,8 +4,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.content.Context;
 import android.util.Log;
@@ -27,121 +32,95 @@ import android.util.Log;
  * @date: 2015年6月1日 下午3:45:51
  */
 
-public class TcpSocket {
+public class TcpSocket implements Runnable {
 
 	private Context context = null;
 
 	public Thread serverThread = null;
 
-	private serverSocket serSocket = null;
+	private ServerSocket serverSocket = null;
 
 	public String Tag = "TcpSocket";
+
+	private static int SERVERPORT = 60034;
+
+	private static List<Socket> mClientList = new ArrayList<Socket>();
+	// 线程池
+	private ExecutorService mExecutorService;
+
+	private boolean isRunning = false;
 
 	public TcpSocket(Context context) {
 		this.context = context;
 
 	}
 
-	public void startSocket() {
-		if (serverThread == null || !serverThread.isAlive()) {
-			serSocket = new serverSocket();
-			serverThread = new Thread(serSocket);
-			serverThread.start();
+	/**
+	 * @description: 对不同的客户端分别用线程处理,注意启动的时候需要将数据
+	 * 
+	 * @throws:
+	 * @author: HuJun
+	 * @date: 2015年6月2日 下午4:31:32
+	 */
+	public void startTcp() {
+		try {
+			serverSocket = new ServerSocket(SERVERPORT);
+			mExecutorService = Executors.newCachedThreadPool();
+			Socket client = null;
+			isRunning = true;
+			while (isRunning) {
+				client = serverSocket.accept();
+				mClientList.add(client);
+				mExecutorService.execute(new ThreadServer(client));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
-	public class serverSocket implements Runnable {
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		isRunning = true;
+		startTcp();
+	}
 
-		private ServerSocket mSockets = null;
+	public void stopTcp() {
+		isRunning = false;
+	}
 
-		private Socket socket = null;
+	/**
+	 * @description: 服务端数据接收
+	 * 
+	 * @author: HuJun
+	 * @date: 2015年6月2日 下午4:32:08
+	 */
+	private class ThreadServer implements Runnable {
+		private Socket mSocket;
 
-		private static final int SERVERPORT = 60034;// 服务端的端口号是
-
-		private boolean isRunning = false;
-
-		private BufferedReader bufferedReader = null;
-		private String msg = "";
-
-		public serverSocket() {
-			isRunning = true;
-			initSocket();
-		}
-
-		/**
-		 * @description:
-		 * 
-		 * @throws:
-		 * @author: HuJun
-		 * @date: 2015年6月1日 下午4:05:43
-		 */
-		private void initSocket() {
-			try {
-				Log.e(Tag, "初始化Socket");
-				mSockets = new ServerSocket(SERVERPORT);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		public void stop() {
-			isRunning = false;
+		public ThreadServer(Socket socket) {
+			this.mSocket = socket;
 		}
 
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			while (isRunning) {
-				try {
-					socket = mSockets.accept();
-					InputStream inputStream = socket.getInputStream();
-					// 读取客户端socket的输入流的内容并输出
-					byte[] buffer = new byte[512];
-					int temp = 0;
-					while ((temp = inputStream.read(buffer)) != -1) {
-						Log.e(Tag, "接收数据为:" + new String(buffer, 0, temp));
-					}
-					inputStream.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					close();
+			InputStream inputStream;
+			try {
+				inputStream = mSocket.getInputStream();
+				byte[] buffer = new byte[512];
+				int temp = 0;
+				while ((temp = inputStream.read(buffer)) != -1) {
+					Log.e(Tag, "接收数据为:" + new String(buffer, 0, temp));
 				}
-
-			}
-		}
-
-		public void close() {
-			Log.e(Tag, "服务socket断开");
-			isRunning = false;
-			if (bufferedReader != null) {
-				try {
-					bufferedReader.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				bufferedReader = null;
+				inputStream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 
-			if (socket != null) {
-				try {
-					socket.close();
-					socket = null;
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			}
 		}
-	}
 
-	public void close() {
-		if (serSocket != null) {
-			serSocket.close();
-		}
 	}
 
 }
