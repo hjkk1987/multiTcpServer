@@ -2,6 +2,7 @@ package com.jmdns.multicast.device;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -92,15 +93,16 @@ public class TcpSocket {
 		public void run() {
 			// TODO Auto-generated method stub
 			while (isRunning) {
-				Log.e(Tag, "接收信息:");
 				try {
 					socket = mSockets.accept();
-					bufferedReader = new BufferedReader(new InputStreamReader(
-							socket.getInputStream()));
-					while ((msg = bufferedReader.readLine()) != null) {
-						Log.e(Tag, "接收到信息为:");
+					InputStream inputStream = socket.getInputStream();
+					// 读取客户端socket的输入流的内容并输出
+					byte[] buffer = new byte[512];
+					int temp = 0;
+					while ((temp = inputStream.read(buffer)) != -1) {
+						Log.e(Tag, "接收数据为:" + new String(buffer, 0, temp));
 					}
-					bufferedReader.close();
+					inputStream.close();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

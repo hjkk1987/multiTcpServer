@@ -9,6 +9,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import com.jmdns.multicast.device.TcpSocket;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
@@ -28,11 +30,8 @@ public class MainActivity extends Activity {
 
 		setContentView(R.layout.activity_main);
 
-		try {
-			new Thread(new networkRecieve()).start();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		TcpSocket tcpSocket = new TcpSocket(MainActivity.this);
+		tcpSocket.startSocket();
 	}
 
 	private static final int SERVERPORT = 60034;
