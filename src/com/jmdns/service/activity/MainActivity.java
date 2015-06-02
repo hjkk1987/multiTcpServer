@@ -1,6 +1,8 @@
 package com.jmdns.service.activity;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -33,35 +35,38 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private static final String SERVERIP = "127.0.0.1";
 	private static final int SERVERPORT = 60034;
 
 	class networkRecieve implements Runnable {
 
-		ServerSocket messageserver = null;
-		Socket messagesocket = null;
-
 		@Override
 		public void run() {
+			ServerSocket messageserver = null;
 			try {
 				messageserver = new ServerSocket(SERVERPORT);
-				Log.e(Tag, "text:开始接收数据");
 				while (true) {
-					messagesocket = messageserver.accept();
-					BufferedReader br = new BufferedReader(
-							new InputStreamReader(
-									messagesocket.getInputStream()));
-					String text = "";
-					while ((text = br.readLine()) != null) {
-						// show.setText(text);
-						Log.e(Tag, "text:" + text);
+					Socket messagesocket = messageserver.accept();
+					Log.e(Tag, "text:开始接收数据");
+					InputStream inputStream = messagesocket.getInputStream();
+					// 读取客户端socket的输入流的内容并输出
+					byte[] buffer = new byte[512];
+					int temp = 0;
+					while ((temp = inputStream.read(buffer)) != -1) {
+						Log.e(Tag, "接收数据为:" + new String(buffer, 0, temp));
 					}
-
-					messageserver.close();
-					br.close();
+					inputStream.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				try {
+					messageserver.close();
+					messageserver.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
 			}
 		}
 	};
